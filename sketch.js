@@ -3,132 +3,103 @@ const World = Matter.World;
 const Bodies = Matter.Bodies;
 const Constraint = Matter.Constraint;
 
-  
-
-var engine, world;
-var canvas;
-var palyer, playerBase, playerArcher;
-var playerArrows = [];
-var board1, board2;
-var numberOfArrows = 10;
+var engine, world, backgroundImg,boat;
+var canvas, angle, tower, ground, cannon;
+var balls = [];
+var boats = [];
 
 function preload() {
-  backgroundImg = loadImage("./assets/background.png");
+  backgroundImg = loadImage("./assets/background.gif");
+  towerImage = loadImage("./assets/tower.png");
 }
 
 function setup() {
-  canvas = createCanvas(windowWidth, windowHeight);
-
+  canvas = createCanvas(1200, 600);
   engine = Engine.create();
   world = engine.world;
+  angleMode(DEGREES)
+  angle = 15
 
-  playerBase = new PlayerBase(300, 500, 180, 150);
-  player = new Player(285, playerBase.body.position.y - 153, 50, 180);
-  playerArcher = new PlayerArcher(
-    340,
-    playerBase.body.position.y - 180,
-    120,
-    120
-  );
+  ground = Bodies.rectangle(0, height - 1, width * 2, 1, { isStatic: true });
+  World.add(world, ground);
 
-  board1 = new Board(width - 300, 330, 50, 200);
-  board2 = new Board(width - 550, height - 300, 50, 200);
+  tower = Bodies.rectangle(160, 350, 160, 310, { isStatic: true });
+  World.add(world, tower);
+
+  cannon = new Cannon(180, 110, 130, 100, angle);
+  
 }
 
 function draw() {
-  background(backgroundImg);
+  background(189);
+  image(backgroundImg, 0, 0, width, height);
 
   Engine.update(engine);
 
-  playerBase.display();
-  player.display();
-  playerArcher.display();
+  
+  rect(ground.position.x, ground.position.y, width * 2, 1);
+ 
 
-  board1.display();
-  board2.display();
+  push();  
+  imageMode(CENTER);
+  image(towerImage,tower.position.x, tower.position.y, 160, 310);
+  pop();
 
-  for (var i = 0; i < playerArrows.length; i++) {
-    if (playerArrows[i] !== undefined) {
-      playerArrows[i].display();
-    }
+
+  showBoats();
+  
+  
+  
+
+  for (var i = 0; i < balls.length; i++) {
+    showCannonBalls(balls[i], i);
   }
 
-  // Title
-  fill("#FFFF");
-  textAlign("center");
-  textSize(40);
-  text("EPIC ARCHERY", width / 2, 100);
-
-  // Arrow Count
-  fill("#FFFF");
-  textAlign("center");
-  textSize(30);
-  text("Remaining Arrows : " + numberOfArrows, 200, 100);
+  cannon.display();
 }
 
 function keyPressed() {
-  // if (keyCode === 23) {
-  //   if (numberOfArrows > 0) {
-  //     var posX = playerArcher.body.position.x;
-  //     var posY = playerArcher.body.position.y;
-  //     var angle = playerArcher.body.angle;
-
-  //     var arrow = new PlayerArrow(posX, posY, 100, 10, angle);
-
-  //     Matter.Body.setAngle(arrow.body, angle);
-  //     playerArrows.push(arrow);
-  //     numberOfArrows -= 1;
-  //   }
-  // }
-
-  //   if (keyCode === 32) {
-  //   if (numberOfArrows > 0) {
-  //     var posX = playerArcher.body.position.x;
-  //     var posY = playerArcher.body.position.y;
-  //     var angle = playerArcher.body.angle;
-  //
-  //     var arrow = new PlayerArrow(posX, posY, 100, 10, angle);
-  //
-  //     Matter.Body.setAngle(arrow.body, angle);
-  //     playerArrows.push(arrow);
-  //     numberOfArrows += 1;
-  //   }
-  // }
-
-  if (keyCode === 32) {
-     if (numberOfArrows > 0) {
-       var posX = playerArcher.body.position.x;
-       var posY = playerArcher.body.position.y;
-       var angle = playerArcher.body.angle;
-
-       var arrow = new PlayerArrow(posX, posY, 100, 10, angle);
-
-      Matter.Body.setAngle(arrow.body, angle);
-       playerArrows.push(arrow);
-       numberOfArrows -= 1;
-     }
-   }
-
-  // if (keyCode === 32) {
-  //   if (numberOfArrows > 0) {
-  //     var posX = playerArcher.body.position.x;
-  //     var posY = playerArcher.body.position.y;
-  //     var angle = playerArcher.body.angle;
-
-  //     var arrow = new PlayerArrow(posX, posY, 100, 10, angle);
-
-  //     Matter.Body.setAngle(arrow.body, angle);
-  //     playerArrows.push(arrow);
-  //     numberOfArrows *= 1;
-  //   }
-  // }
+  if (keyCode === DOWN_ARROW) {
+    var cannonBall = new CannonBall(cannon.x, cannon.y);
+    cannonBall.trajectory = [];
+    Matter.Body.setAngle(cannonBall.body, cannon.angle);
+    balls.push(cannonBall);
+  }
 }
 
-function keyReleased() {
-  if (keyCode === 32) {
-    if (playerArrows.length) {
-      var angle = playerArcher.body.angle;
-      playerArrows[playerArrows.length - 1].shoot(angle);
-    }
+function showCannonBalls(ball, index) {
+  if (ball) {
+    ball.display();
   }
+}
+
+
+
+function keyReleased() {
+  if (keyCode === DOWN_ARROW) {
+    balls[balls.length - 1].shoot();
+  }
+}
+
+function showBoats(){
+  if(boats.length>0){
+    if(
+      boats[boats.length-1]===undefined || boats[boats.length-1].body.position.x < width-300
+    ){
+      var positions =[-40,-60,-70,-20];
+      var position = random(positions);
+      var boat = new Boat(width,height-60,170,170, position);
+      boats.push(boat);
+    }
+  }else{
+    var boat = new Boat(width,height-60,170,170,-60);
+    boats.push(boat)
+  }
+for(var i =0; i<boats.length;i++){
+  if(boats[i]){
+    Matter.Body.setVelocity(boats[i].body,{x:-0.9, y:0});
+    boats[i].display();
+  }
+}
+
 }
